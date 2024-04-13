@@ -142,8 +142,10 @@ def test(config, checkpoint, device, sent_path=None, lb_path=None, pos_path=None
 
 
 def main(config_path):
+    # Load config from path.
     config = load_config(config_path, use_default=True)
 
+    # Use GPU or CPU device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Seed and GPU setting
@@ -153,26 +155,55 @@ def main(config_path):
     np.random.seed(config.manual_seed)
     torch.manual_seed(config.manual_seed)
 
+    # Create checkpoint directory with experiment name if need.
     save_checkpoint_dir = os.path.join('saved_models/', config.exp_name)
     os.makedirs(save_checkpoint_dir, exist_ok=True)
 
+    # Copy current config file to the checkpoint directory.
     copyfile(config_path, os.path.join(save_checkpoint_dir, 'config.py'))
 
+    # Load logger and save logs in the checkpoint directory.
     logger_file_path = os.path.join(save_checkpoint_dir, 'record.log')
     logger = get_logger(logger_file_path)
 
     logger.info(f'device: {device}')
     logger.info(f'now: {datetime.now()}')
 
+    # Load BertTokenizer from pretrained model, e.g. "bert-base-chinese"
     tokenizer = BertTokenizer.from_pretrained(config.model_source)
 
+    # Load all polyphonic characters from "POLYPHONIC_CHARS.txt" file.
     polyphonic_chars = [line.split('\t') for line in open(config.polyphonic_chars_path).read().strip().split('\n')]
+    """
+    polyphonic_chars:
+
+    [['万', 'wan4'],
+    ['上', 'shang4'],
+    ['与', 'yu3'],
+    ['与', 'yu4'],
+    ['丧', 'sang1'],
+    ['丧', 'sang4'],
+    ['中', 'zhong1'],
+    ['中', 'zhong4'],
+    ['为', 'wei2'],
+    ['为', 'wei4']]
+    """
+
     labels, char2phonemes = get_char_phoneme_labels(polyphonic_chars) if config.use_char_phoneme else get_phoneme_labels(polyphonic_chars)
     chars = sorted(list(char2phonemes.keys()))
 
+    """
+    chars:
+    ['万', '上', '与', '丧', '中', '为', '丽', '么', '乐', '乘']
+    """
+
+    # texts: Full texts of all input (X).
+    # query_ids: Polyphone character position (index).
+    # phonemes: Target label (Y).
     train_texts, train_query_ids, train_phonemes = prepare_data(config.train_sent_path, config.train_lb_path)
     valid_texts, valid_query_ids, valid_phonemes = prepare_data(config.valid_sent_path, config.valid_lb_path)
 
+    # pos_tags: Tags (e.g. ['N', 'V', 'D', 'P', 'A', 'T', 'C', 'I', 'DE', 'UNK'])
     train_pos_tags = prepare_pos(config.param_pos['train_pos_path']) if config.use_pos else None
     valid_pos_tags = prepare_pos(config.param_pos['valid_pos_path']) if config.use_pos else None
 

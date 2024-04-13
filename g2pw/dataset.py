@@ -8,6 +8,8 @@ ANCHOR_CHAR = '▁'
 
 
 def prepare_data(sent_path, lb_path=None):
+    """Load data from path.
+    """
     raw_texts = open(sent_path).read().rstrip().split('\n')
     query_ids = [raw.index(ANCHOR_CHAR) for raw in raw_texts]
     texts = [raw.replace(ANCHOR_CHAR, '') for raw in raw_texts]
@@ -19,6 +21,8 @@ def prepare_data(sent_path, lb_path=None):
 
 
 def get_phoneme_labels(polyphonic_chars):
+    """Get phoneme labels from chars.
+    """
     labels = sorted(list(set([phoneme for char, phoneme in polyphonic_chars])))
     char2phonemes = {}
     for char, phoneme in polyphonic_chars:
@@ -29,6 +33,8 @@ def get_phoneme_labels(polyphonic_chars):
 
 
 def get_char_phoneme_labels(polyphonic_chars):
+    """Get Char Phoneme Labels.
+    """
     labels = sorted(list(set([f'{char} {phoneme}' for char, phoneme in polyphonic_chars])))
     char2phonemes = {}
     for char, phoneme in polyphonic_chars:
@@ -39,9 +45,12 @@ def get_char_phoneme_labels(polyphonic_chars):
 
 
 def prepare_pos(pos_path):
-     return open(pos_path).read().rstrip().split('\n')
+    """Load POS data from path.
+    """
+    return open(pos_path).read().rstrip().split('\n')
 
 
+# Inherit [Torch Dataset]
 class TextDataset(Dataset):
     POS_TAGS = ['UNK', 'A', 'C', 'D', 'I', 'N', 'P', 'T', 'V', 'DE', 'SHI']
 
